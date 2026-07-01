@@ -1,6 +1,6 @@
 import unittest
 from textnode import TextNode, TextType
-from inline_markdown import split_nodes_delimiter,split_nodes_image,split_nodes_link,text_to_textnodes
+from inline_markdown import split_nodes_delimiter,split_nodes_image,split_nodes_link,text_to_textnodes,markdown_to_blocks,block_to_block_type,BlockType
 
 class TestSplitNodesDelimiter(unittest.TestCase):
     def test_code_delimiter(self):
@@ -69,3 +69,57 @@ class TestTextToTextnodes(unittest.TestCase):
             ],
             new_nodes
         )
+
+class TestMarkdownToBlocks(unittest.TestCase):
+    def test_markdown_to_blocks(self):
+        md = """
+This is **bolded** paragraph
+
+This is another paragraph with _italic_ text and `code` here
+This is the same paragraph on a new line
+
+- This is a list
+- with items
+"""
+        blocks = markdown_to_blocks(md)
+        self.assertEqual(
+            blocks,
+            [
+                "This is **bolded** paragraph",
+                "This is another paragraph with _italic_ text and `code` here\nThis is the same paragraph on a new line",
+                "- This is a list\n- with items",
+            ],
+        )
+
+class TestBlockToBlockType(unittest.TestCase):
+    def test_paragraph(self):
+        block = "Just a normal sentence."
+        self.assertEqual(block_to_block_type(block), BlockType.PARAGRAPH)
+
+    def test_heading(self):
+        block = "## A second-level heading"
+        self.assertEqual(block_to_block_type(block), BlockType.HEADING)
+
+    def test_code(self):
+        block = "```\nsome code here\n```"
+        self.assertEqual(block_to_block_type(block), BlockType.CODE)
+
+    def test_quote(self):
+        block = "> first line\n> second line"
+        self.assertEqual(block_to_block_type(block), BlockType.QUOTE)
+
+    def test_unordered_list(self):
+        block = "- item one\n- item two"
+        self.assertEqual(block_to_block_type(block), BlockType.ULIST)
+
+    def test_ordered_list(self):
+        block = "1. first\n2. second\n3. third"
+        self.assertEqual(block_to_block_type(block), BlockType.OLIST)
+
+    def test_heading_edge(self):
+        block = "####### Something"
+        self.assertEqual(block_to_block_type(block), BlockType.PARAGRAPH)
+
+    def test_ordered_list_fail(self):
+        block = "1. first\n5. second\n8. third"
+        self.assertEqual(block_to_block_type(block), BlockType.PARAGRAPH)

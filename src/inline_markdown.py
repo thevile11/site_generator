@@ -1,5 +1,6 @@
 from htmlnode import HTMLNode
 from textnode import TextNode, TextType
+from enum import Enum
 from find_regex import extract_markdown_images,extract_markdown_links
 
 def split_nodes_delimiter(old_nodes, delimiter, text_type):
@@ -72,3 +73,50 @@ def text_to_textnodes(text):
     fourth_split = split_nodes_image(third_split)
     fifth_split = split_nodes_link(fourth_split)
     return fifth_split 
+
+
+def markdown_to_blocks(markdown):
+    blocks = markdown.split("\n\n")
+    stripped_blocks = []
+    for block in blocks:
+        block_strip = block.strip()
+        if block_strip != "":
+            stripped_blocks.append(block_strip)
+    return stripped_blocks
+    
+class BlockType(Enum):
+    PARAGRAPH = "paragraph"
+    HEADING = "heading"
+    CODE = "code"
+    QUOTE = "quote"
+    ULIST = "unordered_list"
+    OLIST = "ordered_list"
+
+def block_to_block_type(block: str):
+    if block.startswith(("# ", "## ", "### ", "#### ", "##### ", "###### ")):
+        return BlockType.HEADING
+    lines = block.split("\n")
+    if lines[0].startswith("```") and lines[-1].startswith("```") and len(lines) > 1:
+        return BlockType.CODE
+    
+    if block.startswith(">"):
+        for line in lines:
+            if not line.startswith(">"):
+                return BlockType.PARAGRAPH
+        return BlockType.QUOTE
+
+    if block.startswith("- "):
+        for line in lines:
+            if not line.startswith("- "):
+                return BlockType.PARAGRAPH
+        return BlockType.ULIST
+
+    if block.startswith("1. "):
+        i = 0
+        for line in lines:
+            i+= 1
+            if not line.startswith(str(i) + ". "):
+                return BlockType.PARAGRAPH
+        return BlockType.OLIST
+
+    return BlockType.PARAGRAPH
